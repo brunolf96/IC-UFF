@@ -15,7 +15,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 
 ###########################################################################################################################################
-def plots_rectangles(xo, zo, p, ref=0, color='black'):
+def plots_rectangles(xo, zo, p, color1='blue', color2='black', color3='green'):        
     """
     Plot a group of rectangles with the same width in a juxtaposed framework following a number of observations.
 
@@ -23,9 +23,10 @@ def plots_rectangles(xo, zo, p, ref=0, color='black'):
     
     * xo : (1D array) ==> x coordinate of observations;
     * zo : (1D array) ==> z coordinate of observations;   
-    *  p : (1D array) ==> difference between top and bottom of a specific rectangle;     
-    * color : (string) ==> color of the rectangles; 
-    * ref : (int) ==> represents the value of reference level that will be used to establish the position of the top of the rectangles;
+    *  p : (1D array) ==> difference between top and bottom of a specific rectangle that represents the difference between the relief and the interface that divides the sediment layer from the basement layer;
+    * color1 : (string) ==> color of the curve that represents the relief; 
+    * color2 : (string) ==> color of the rectangles; 
+    * color3 : (string) ==> color of the curve that represents the interface that divides the sediment layer from the basement layer;
     
     Outputs:
     
@@ -33,8 +34,7 @@ def plots_rectangles(xo, zo, p, ref=0, color='black'):
     * z_plot : (list) ==> It is a list that contains other lists where each of them provides the z coordinate of the points that form a specific rectangle that has been plotted;
 
     """
-    # metade da espessura horizontal do primeiro retangulo em funcao da posição de observacao (1 prisma por observacao):
-    # localizacao do primeiro prisma em funcao da posicao de observacao (1 prisma por observacao):
+    # cálculo do valor que deve ser somado ou subtraido aos pontos de observação para se ter as coordenadas x dos retângulos:
     xmed = ( xo[0] + xo[1] ) / 2.0
     x_prisma = abs( xo[0] - ( xmed ) ) # esse valor será usado durante a etapa de visualização gráfica para a possibilizar a geração dos retangulos
     
@@ -42,31 +42,34 @@ def plots_rectangles(xo, zo, p, ref=0, color='black'):
     nobs = len(xo)
     x_plot = []
     z_plot = []
-    for i in range(nobs):
+    for i in range(nobs): # construindo listas com todas as coordenadas x e z dos pontos que formam todos os retângulos
         x_plot.append( [ xo[i] - x_prisma, xo[i] + x_prisma, xo[i] + x_prisma, xo[i] - x_prisma, xo[i] - x_prisma ] )
-        # O valor 0 foi usado como referência
-        # valores acima ou abaixo de 0 para z0, simbolizando um excesso ou falta de relevo, respectivamente, em relação a referência
-        if zo[i] < 0:
-            z_plot.append( [ zo[i], zo[i], ref + p[i] , ref + p[i], zo[i] ] )
-        else:
-            z_plot.append( [ zo[i], zo[i], zo[i] + p[i] , zo[i] + p[i], zo[i] ] )
+        z_plot.append( [ zo[i], zo[i], zo[i] + p[i] , zo[i] + p[i], zo[i] ] )
         
     # Visualização gráfica:
     plt.figure( figsize=(10,10) )
-    plt.plot(xo,zo,'vr')
+    plt.plot(xo,zo,'vr') # visualização das observações
+    
+    plt.plot(xo, zo, color1) # delimitação do relevo
+   
+    z_lim_sed_emb = []
+    for i in range(nobs): # obtenção das coordenadas z dos pontos que formaram a curva que representa o limite sedimento - embasamento
+        z_lim_sed_emb.append( z_plot[i][3] )
+    
+    plt.plot(xo, z_lim_sed_emb, color3) # delimitação do limite sedimento - embasamento
     
     for i in range(nobs):
-        plt.plot( x_plot[i], z_plot[i], color) # visualização dos retângulos
+        plt.plot( x_plot[i], z_plot[i], color2) # visualização dos retângulos
     
+    plt.legend(['Observações','Relevo','Sedimento - Embasamento'], loc='upper left', bbox_to_anchor=(1,1)) # legendas
     plt.grid()
     plt.xlim( [ xo[0] - 2 * x_prisma , xo[nobs - 1] + 2 * x_prisma ] ) # retirar esse comando, interfere na visualização
     plt.gca().invert_yaxis()
     plt.show()
-        
+    
     return x_plot, z_plot
-
-###########################################################################################################################################
-def plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cmap='RdBu_r'):
+       ###########################################################################################################################################
+def plots_paint_rectangles(xo, zo, p, n_var=None, var=None, name=None, cmap='RdBu_r', color1='blue', color2='green'):        
     """
     Paint a group of rectangles with the same width in a juxtaposed framework.
 
@@ -74,9 +77,8 @@ def plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cm
     
     * xo : (1D array) ==> x coordinate of observations;
     * zo : (1D array) ==> z coordinate of observations;       
-    *  p : (1D array) ==> difference between top and bottom of a specific rectangle; 
+    *  p : (1D array) ==> difference between top and bottom of a specific rectangle that represents the difference between the relief and the interface that divides the layer of sediment from the basement layer;
     * cmap : (string) ==> colormap instance or registered colormap name;
-    * ref : (int) ==> represents the value of reference level that will be used to establish the position of the top of the rectangles;
     * n_var : (int) ==> number of values of variable var that will be given for each rectangle;
     
     * var : (list) ==> Values related to a property or physical greatness of the layers on the subsurface. These values have to be given in a specific form that will depend of how many rectangles will be painted and how many values of var will be given for each rectangle. Var is a list that contains others list. The number of the the lists inside var provide the number of rectangles that will be painted. The number of elements of these lists provide the number of values related to a property or physical greatness of the layers on the subsurface of the rectangles (This number is the value of the variable n_var that should be given).
@@ -91,18 +93,21 @@ def plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cm
         - name = 'Depth $(m)$'
         - name = 'Density constrast $(g/cm^3)$';
     
+    * color1 : (string) ==> color of the curve that represents the relief;
+    * color2 : (string) ==> color of the curve that represents the interface that divides the sediment layer from the basement layer;
+    
     Outputs:
 
-    """
+    """      
     plt.figure( figsize=(10,10) )
     
-    # metade da espessura horizontal do primeiro retangulo em funcao da posição de observacao (1 prisma por observacao):
-    # localizacao do primeiro prisma em funcao da posicao de observacao (1 prisma por observacao):
+    # cálculo do valor que deve ser somado ou subtraido aos pontos de observação para se ter as coordenadas x dos retângulos:
     xmed = ( xo[0] + xo[1] ) / 2.0
     x_prisma = abs( xo[0] - ( xmed ) ) # esse valor será usado durante a etapa de visualização gráfica para a possibilizar a geração dos retangulos
     
     nobs = len(xo)                
     for i in range ( nobs ):
+        # salvando os valores máximo e minimo da propriedade ou grandeza física que será representada pela escala de cor do plt.imshow
         for j in range( n_var ): 
             value = var[i][j]
             if j == 0 and i == 0:
@@ -114,28 +119,21 @@ def plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cm
                 if value < var_min:
                     var_min = value       
         print('i =',i,'=>',var[i]) # apenas usado para confirmar mais facilmente a escala de cor até ela ser ajustada corretamente
-       
+    
+    z_lim_sed_emb = []
     for i in range (nobs):
-        if zo[i] < 0:        
-            zp = np.array([ zo[i], zo[i], ref + p[i] , ref + p[i], zo[i] ])
-            if i == 0:
-                zmin = zo[i] 
-                zmax = ref + p[i]
-            else:
-                if ref + p[i]  > zmax:
-                    zmax = ref + p[i]
-                if zo[i]  < zmin:
-                    zmin = zo[i] 
-        else:        
-            zp = np.array([ zo[i], zo[i], zo[i] + p[i] , zo[i] + p[i], zo[i] ])
-            if i == 0:
-                zmin = zo[i] 
+        zp = np.array([ zo[i], zo[i], zo[i] + p[i] , zo[i] + p[i], zo[i] ])
+        # salvando os valores máximo e mínimo de profundidade para definir melhor o intervalo do eixo y
+        if i == 0:
+            zmin = zo[i] 
+            zmax = zo[i] + p[i]
+        else:
+            if zo[i] + p[i]  > zmax:
                 zmax = zo[i] + p[i]
-            else:
-                if zo[i] + p[i]  > zmax:
-                    zmax = zo[i] + p[i]
-                if zo[i]  < zmin:
-                    zmin = zo[i] 
+            if zo[i]  < zmin:
+                zmin = zo[i] 
+        
+        z_lim_sed_emb.append( zp[3] ) # obtenção das coordenadas z dos pontos que formaram a curva que representa o limite sedimento - embasamento
     
         xp = np.array([xo[i] - x_prisma, xo[i] + x_prisma, xo[i] + x_prisma, xo[i] - x_prisma, xo[i] - x_prisma])
     
@@ -146,59 +144,25 @@ def plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cm
         fs = 18 # font size for the label
         plt.ylabel('Depth $(m)$',fontsize=fs)
     
-        var_part = np.array( var[i] ) # Isolando apenas os dados do contraste de densidade que serão usados nesse for  
+        var_part = np.array( var[i] ) # isolando apenas os dados do contraste de densidade que serão usados nesse for  
     
         im = plt.imshow(var_part.reshape(n_var,1), cmap, interpolation="bicubic", 
                     vmin=var_min, vmax=var_max,
                     origin='lower',extent=[min(xp), max(xp), min(zp), max(zp)],
                     aspect="auto", clip_path=patch, clip_on=True)
-
+    
     cbar = plt.colorbar()
     cbar.ax.set_ylabel(name, fontsize=fs)
 
     plt.xlim( [ xo[0] - 2 * x_prisma , xo[nobs - 1] + 2 * x_prisma ] ) # retirar esse comando, interfere na visualização
     plt.ylim(zmax + 2, zmin - 2)
-
-    plt.grid()
-    plt.show()
-        
-###########################################################################################################################################
-def teste_plots_rectangles(xo, zo, p, ref=None, color1='blue', color2='black', color3='green'):        
-
-    # metade da espessura horizontal do primeiro retangulo em funcao da posição de observacao (1 prisma por observacao):
-    # localizacao do primeiro prisma em funcao da posicao de observacao (1 prisma por observacao):
-    xmed = ( xo[0] + xo[1] ) / 2.0
-    x_prisma = abs( xo[0] - ( xmed ) ) # esse valor será usado durante a etapa de visualização gráfica para a possibilizar a geração dos retangulos
     
-    # criando listas que armazenarão as coordenadas usadas nos gráficos produzidos: 
-    nobs = len(xo)
-    x_plot = []
-    z_plot = []
-    for i in range(nobs):
-        x_plot.append( [ xo[i] - x_prisma, xo[i] + x_prisma, xo[i] + x_prisma, xo[i] - x_prisma, xo[i] - x_prisma ] )
-        z_plot.append( [ zo[i], zo[i], zo[i] + p[i] , zo[i] + p[i], zo[i] ] )
-        
-    # Visualização gráfica:
-    plt.figure( figsize=(10,10) )
-    plt.plot(xo,zo,'vr')
-    
+    plt.plot(xo,zo,'vr') # visualização das observações
     plt.plot(xo, zo, color1) # delimitação do relevo
-   
-    z_lim_sed_emb = []
-    for i in range(nobs):
-        z_lim_sed_emb.append( z_plot[i][3] )
+    plt.plot(xo, z_lim_sed_emb, color2) # delimitação do limite sedimento - embasamento
     
-    plt.plot(xo, z_lim_sed_emb, color3) # delimitação do limite sedimento - embasamento
-    
-    for i in range(nobs):
-        plt.plot( x_plot[i], z_plot[i], color2) # visualização dos retângulos
-    
+    plt.legend(['Observações','Relevo','Sedimento - Embasamento'], loc=9, bbox_to_anchor=(0., .95, 1., .095), ncol=3, mode='expand') # legendas
     plt.grid()
-    plt.xlim( [ xo[0] - 2 * x_prisma , xo[nobs - 1] + 2 * x_prisma ] ) # retirar esse comando, interfere na visualização
-    plt.gca().invert_yaxis()
     plt.show()
-       ###########################################################################################################################################
-#def teste_plots_paint_rectangles(xo, zo, p, ref=0, n_var=None, var=None, name=None, cmap='RdBu_r'):        
-        
         
 ###########################################################################################################################################        

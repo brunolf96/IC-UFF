@@ -125,3 +125,54 @@ def g_sphere(x, z, sphere1, component='z'):
     return gg
 
 ###########################################################################################################################################
+def g_prism2D_Bruno(x,z,prism):
+    '''
+    This function calculates the vertical component of gravity attraction produced by a rectangle
+    
+    Inputs: 
+    x = horizontal cartesian coordinate in meters of the observation;
+    z = vertical cartesian coordinate in meters of the observation;
+    rod: list with the following elements in this specific order: prism[x_prism, x_med, z_prism, L, rho ]:
+    x_prism = horizontal cartesian coordinate of the center of the rectangle (meters)
+    z_prism = vertical cartesian coordinate of the center of the rectangle (meters)
+    x_med   = half of horizontal length of rectangle (meters)
+    L = vertical length of the rectangle (meters)
+    rho       = density of the prism (kg/m3)
+    component = the gravitational component to be computed (only z component is available yet) 
+    
+    Output:
+    g - numpy array - the required component for the gravity in mGal. Size of gz is the same as x and z observations    
+    '''
+    
+    # saving the inputs of prism:
+    x_prism = prism[0]
+    x_med = prism[1]
+    z_prism = prism[2]
+    L = prism[3]
+    rho = prism[4]
+    
+    # constructing the lengths of the rectangle
+    x_length = 2 * x_med
+    y_length = 1
+    z_length = L
+    
+    # calculating the volume of the rectangle
+    volume = x_length * y_length * z_length
+    
+    # distancia entre as observacoes e a fonte:
+    dx = x_prism - x
+    dz = z_prism - z
+    r = np.sqrt(dx**2 + dz**2)
+    
+    # essencial informations
+    gamma = 6.67e-11 # no SI (m3 / s2 kg)
+    si2mGal = 100000.0 # converter para mGal (unidade convencional)
+
+    # calculating the gravimetric contribution of the rectangle
+    g = (gamma * rho * volume * dz ) / r**3
+    g *= si2mGal
+    
+    # Return the final output
+    return g
+
+###########################################################################################################################################

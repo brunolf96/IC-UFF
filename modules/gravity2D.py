@@ -7,56 +7,6 @@
 import numpy as np 
 
 ###########################################################################################################################################
-def g_prism(x,z,prism):    
-    '''
-    This function calculates the vertical component of gravity attraction produced by a prism 
-    
-    (Telford, 1981)
-    Inputs: x,z = arrays with cartesian coordinates in meters;
-    rod: list with the following elements in this specific order: prism[x_prism, h1_prism, L, A, rho ]:
-    x_prism      = horizontal distance from origin (meters)
-    h1_prism      = vertical distance from origin to top (meters)
-    L         = length of the thin prism (meters) (never zero!)
-    rho       = density of the prism (kg/m3)
-    A         = cross section of the prism (m2)
-    component = the gravitational component to be computed (only z component is available yet) 
-    
-    Output:
-    g - numpy array - the required component for the gravity in mGal. Size of gz is the same as x and z observations    
-    '''
-
-    #saving the inputs of prism:
-    x_prism  = prism[0]
-    h1_prism = prism[1]
-    L_prism  = prism[2]
-    h2_prism  = L_prism - h1_prism
-    A        = prism[3]
-    rho      = prism[4]
-    
-    #seting the variables to make the calclation?
-    dx = x - x_prism
-    dy = np.zeros(len(x))
-    h1 = z - h1_prism
-    h2 = z - h2_prism
-    
-    #setting some constans:
-    G = 6.673e-11
-    si2mGal = 100000.0
-    
-    #making the comptation of g
-    term0 = (G*rho*A)
-    
-    term11 = ( dx**2 + dy**2 + h1**2)
-    term1 = 1/(term11**(0.5))
-    
-    term21 = ( dx**2 + dy**2 + h2**2)
-    term2 = 1/(term21**(0.5))
-
-    g = term0 * abs(term1 - term2)
-    
-    return g*si2mGal
-
-###########################################################################################################################################
 def g_sphere(x, z, sphere1, component='z'):
     '''    
     This function calculates all components of gravity attraction produced by a solid point mass and returns the one associated to the required one.
